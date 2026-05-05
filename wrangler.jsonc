@@ -1,0 +1,53 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "blogify-api",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-05-04",
+	"d1_databases": [
+		{
+			"binding": "blogify_db",
+			"database_name": "blogify-db",
+			"database_id": "7828df0a-f204-475f-a8ce-a54359e4f7dd",
+			"remote": true
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "blogify_kv",
+			"id": "4b1e8463373947b4b9acaea3f69506e6",
+			"remote": true
+		}
+	]
+	// "compatibility_flags": [
+	//   "nodejs_compat"
+	// ],
+	// "vars": {
+	//   "MY_VAR": "my-variable"
+	// },
+	// "kv_namespaces": [
+	//   {
+	//     "binding": "MY_KV_NAMESPACE",
+	//     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+	//   }
+	// ],
+	// "r2_buckets": [
+	//   {
+	//     "binding": "MY_BUCKET",
+	//     "bucket_name": "my-bucket"
+	//   }
+	// ],
+	// "d1_databases": [
+	//   {
+	//     "binding": "MY_DB",
+	//     "database_name": "my-database",
+	//     "database_id": ""
+	//   }
+	// ],
+	// "ai": {
+	//   "binding": "AI"
+	// },
+	// "observability": {
+	//   "enabled": true,
+	//   "head_sampling_rate": 1
+	// }
+}
