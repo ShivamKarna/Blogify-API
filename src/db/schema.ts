@@ -1,69 +1,84 @@
-// users
-// account
-// session
-// blog_post
-// verification
+// Better auth generated schemas : user, session, account, verification
+// Custom tables :
+/*
+blogs
+reactions
+comments
+commentLikes
+savedPosts
+follows
+shares
+notifications
 
-import { sql } from "drizzle-orm";
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+ */
+import { relations, sql } from "drizzle-orm";
+import {
+  sqliteTable,
+  primaryKey,
+  text,
+  integer,
+  index,
+  unique,
+} from "drizzle-orm/sqlite-core";
 
 const timestamps = {
   createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`), // or dosar trika is : .$default(()=> Date.now())
+
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-    .$onUpdate(() => new Date())
+    .$onUpdate(() => new Date()),
+};
+export const user = sqliteTable("user", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: integer("email_verified", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  image: text("image"),
+  role: text("role").default("user").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-    .$onUpdate(() => new Date())
+    .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-};
-
-const generateId = () =>
-  text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID());
-
-// id
-//name
-//email
-//emailVerified : boolean
-//image , handled by better auth automatically
-export const users = sqliteTable("users", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  name: text("name").notNull(),
-  email: text("email").notNull(),
-  emailVerified: integer("email_verified", { mode: "boolean" }),
-  image: text("image"),
-  ...timestamps,
 });
 
-// id
-// accountId
-// providerId
-// userId
-// accessToken
-// refreshToken
-// idToken
-// accessTokenExpiresAt
-// refreshTokenExpiresAt
-// scope
-// password
-// createdAt
-// updatedAt,
-// idx userId
+export const session = sqliteTable(
+  "session",
+  {
+    id: text("id").primaryKey(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    token: text("token").notNull().unique(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+  },
+  (table) => [index("session_userId_idx").on(table.userId)],
+);
+
 export const account = sqliteTable(
   "account",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
+    id: text("id").primaryKey(),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
     idToken: text("id_token"),
@@ -75,87 +90,266 @@ export const account = sqliteTable(
     }),
     scope: text("scope"),
     password: text("password"),
-    ...timestamps,
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
   },
-  (table) => [index("acc_userid_idx").on(table.userId)],
+  (table) => [index("account_userId_idx").on(table.userId)],
 );
 
-// Id
-// userId : fkey
-// Title
-// Sub-Title
-// Excerpt
-// Slug
-// Tags
-// createdAt
-// updatedAt,
-// idx userid
+export const verification = sqliteTable(
+  "verification",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [index("verification_identifier_idx").on(table.identifier)],
+);
+
+export const userRelations = relations(user, ({ many }) => ({
+  sessions: many(session),
+  accounts: many(account),
+}));
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
+  }),
+}));
+
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, {
+    fields: [account.userId],
+    references: [user.id],
+  }),
+}));
 
 export const blogs = sqliteTable(
   "blogs",
   {
+    // id, authorId, title, subTitle, excerpt, slug, tags, content, coverIimage, published, aiGenerated, viewCount, shareCout, timestamps
+    // idx at authorid, slug, published, createdAt
     id: text("id")
       .primaryKey()
-      .notNull()
       .$defaultFn(() => crypto.randomUUID()),
-    userID: text("user_id")
+    authorId: text("author_id")
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-
+      .references(() => user.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     subTitle: text("sub_title"),
     excerpt: text("excerpt"),
-    slug: text("slug"),
+    slug: text("slug").notNull().unique(),
     tags: text("tags"),
+    content: text("content").notNull(),
+    coverImage: text("cover_image"), // Cloudinary URL
+    published: integer("published", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    aiGenerated: integer("ai_generated", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    viewCount: integer("view_count").notNull().default(0),
+    shareCount: integer("share_count").notNull().default(0),
     ...timestamps,
   },
-  (table) => [index("blogs_userid_idx").on(table.userID)],
+  (table) => [
+    index("blogs_authorid_idx").on(table.authorId),
+    index("blogs_slug_idx").on(table.slug),
+    index("blogs_published_idx").on(table.published),
+    index("blogs_createdat_idx").on(table.createdAt),
+  ],
 );
 
-// id
-// token
-// expiresAt
-// ipAddress
-// userAgent
-// userId: fkey
-// createdAt
-// updatedAt,
-// idx userIdexport
-export const session = sqliteTable(
-  "session",
+export const reactions = sqliteTable(
+  "reactions",
+  {
+    // id, blogId, userId, type,
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+
+    blogId: text("blog_id")
+      .notNull()
+      .references(() => blogs.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    type: text("type").notNull(),
+  },
+  (table) => [
+    unique("reactions_blog_user_uniq").on(table.blogId, table.userId), // Prevents user from liking the same  blogpost more than once
+    index("reactions_blogid_idx").on(table.blogId),
+    index("reactions_userid_idx").on(table.userId),
+  ],
+);
+
+export const comments = sqliteTable(
+  "comments",
   {
     id: text("id")
       .primaryKey()
-      .notNull()
       .$defaultFn(() => crypto.randomUUID()),
+    blogId: text("blog_id")
+      .notNull()
+      .references(() => blogs.id, { onDelete: "cascade" }),
+    authorId: text("author_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
 
-    token: text("token").notNull(),
-    expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
-    ipAddress: text("ip_address"),
-    userAgent: text("user_agent"),
-    userId: text("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
+    content: text("content").notNull(),
+
+    // threading
+    parentId: text("parent_id"),
+    rootId: text("root_id"),
+
+    likeCount: integer("like_count").notNull().default(0),
+    replyCount: integer("reply_count").notNull().default(0),
+
+    // soft delete option
+    deleted: integer("deleted", { mode: "boolean" }).notNull().default(false),
+
+    edited: integer("edited", { mode: "boolean" }).notNull().default(false),
+    editedAt: integer("edited_at", { mode: "timestamp_ms" }),
 
     ...timestamps,
   },
-  (table) => [index("session_userId_idx").on(table.userId)], // this userId might cause an issue?,badme dekhbai agr error aelai tab
+  (table) => [
+    index("comments_blogid_idx").on(table.blogId),
+    index("comments_parentid_idx").on(table.parentId),
+    index("comments_authorid_idx").on(table.authorId),
+    index("comments_rootid_idx").on(table.rootId),
+  ],
 );
 
-// id;
-// identifier;
-// value;
-// expiresAt;
-// createdAt;
-// updatedAt;
-export const verification = sqliteTable("verification", {
-  id: text("id")
-    .primaryKey()
-    .notNull()
-    .$defaultFn(() => crypto.randomUUID()),
+export const commentLikes = sqliteTable(
+  "comment_likes",
+  {
+    commentId: text("comment_id")
+      .notNull()
+      .references(() => comments.id, { onDelete: "cascade" }),
 
-  identifier: text("identifier").notNull(),
-  value: text("value").notNull(),
-  expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
-  ...timestamps,
-});
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    ...timestamps,
+  },
+  (table) => [
+    primaryKey({ columns: [table.commentId, table.userId] }),
+    index("comments_likes_commentid_idx").on(table.commentId),
+    index("comments_likes_userid_idx").on(table.userId),
+  ],
+);
+
+export const savedPosts = sqliteTable(
+  "saved_posts",
+  {
+    // userid, blogid, id, uniq
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    blogId: text("blog_id")
+      .notNull()
+      .references(() => blogs.id, { onDelete: "cascade" }),
+    ...timestamps,
+  },
+  (table) => [
+    unique("saved_posts_uniq").on(table.userId, table.blogId),
+    index("saved_posts_userid_idx").on(table.userId),
+    index("saved_posts_blogid_idx").on(table.blogId),
+  ],
+);
+
+export const follows = sqliteTable(
+  "follows",
+  {
+    // id, followerId, followingId, timestmp
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+
+    followerId: text("follower_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    followingId: text("following_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    ...timestamps,
+  },
+  (table) => [
+    unique("follows_follower_following_idx").on(
+      table.followerId,
+      table.followingId,
+    ),
+    index("follows_followerid_idx").on(table.followerId),
+    index("follows_followingid_idx").on(table.followingId),
+  ],
+);
+
+export const shares = sqliteTable(
+  "shares",
+  {
+    // id, postId, userId, tiemstamps, platform where it was shared
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+
+    blogId: text("blog_id")
+      .notNull()
+      .references(() => blogs.id, { onDelete: "cascade" }),
+
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+
+    platform: text("platform"),
+    ...timestamps,
+  },
+  (table) => [index("platform_blogid_idx").on(table.blogId)],
+);
+
+export const notifications = sqliteTable(
+  "notifications",
+  {
+    // id, reciever , actor, type, entityType, entity id, read or not
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+
+    recipientId: text("recipient_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    actorId: text("actor_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    type: text("type").notNull(),
+    entityType: text("entity_type").notNull(), // blog , comment, follow
+    entityId: text("entity_id").notNull(),
+    read: integer("read", { mode: "boolean" }).default(false),
+    ...timestamps,
+  },
+  (table) => [
+    index("notifications_recipientid_idx").on(table.recipientId),
+    index("notifications_createdat_idx").on(table.createdAt),
+    index("notifications_read_idx").on(table.read),
+    index("notifications_recipient_read_idx").on(table.recipientId, table.read),
+  ],
+);
