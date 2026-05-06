@@ -118,25 +118,6 @@ export const verification = sqliteTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const userRelations = relations(user, ({ many }) => ({
-  sessions: many(session),
-  accounts: many(account),
-}));
-
-export const sessionRelations = relations(session, ({ one }) => ({
-  user: one(user, {
-    fields: [session.userId],
-    references: [user.id],
-  }),
-}));
-
-export const accountRelations = relations(account, ({ one }) => ({
-  user: one(user, {
-    fields: [account.userId],
-    references: [user.id],
-  }),
-}));
-
 export const blogs = sqliteTable(
   "blogs",
   {
@@ -353,3 +334,136 @@ export const notifications = sqliteTable(
     index("notifications_recipient_read_idx").on(table.recipientId, table.read),
   ],
 );
+
+// Relations
+
+export const userRelations = relations(user, ({ many }) => ({
+  sessions: many(session),
+  accounts: many(account),
+  blogs: many(blogs),
+  comments: many(comments),
+  reactions: many(reactions),
+  savedPosts: many(savedPosts),
+  shares: many(shares),
+  followers: many(follows, { relationName: "followers" }),
+  following: many(follows, { relationName: "following" }),
+  recievedNotifications: many(notifications, {
+    relationName: "recievedNotifications",
+  }),
+  sentNotifications: many(notifications, {
+    relationName: "sentNotifications",
+  }),
+}));
+
+export const blogsRelations = relations(blogs, ({ one, many }) => ({
+  author: one(user, {
+    fields: [blogs.authorId],
+    references: [user.id],
+  }),
+  reactions: many(reactions),
+  comments: many(comments),
+  savedBy: many(savedPosts),
+  shares: many(shares),
+}));
+
+export const reactionsRelations = relations(reactions, ({ one }) => ({
+  reactedBy: one(user, {
+    fields: [reactions.userId],
+    references: [user.id],
+  }),
+  reactedTo: one(blogs, {
+    fields: [reactions.blogId],
+    references: [blogs.id],
+  }),
+}));
+
+export const commentRelations = relations(comments, ({ one, many }) => ({
+  author: one(user, {
+    fields: [comments.authorId],
+    references: [user.id],
+  }),
+  blog: one(blogs, {
+    fields: [comments.blogId],
+    references: [blogs.id],
+  }),
+  parent: one(comments, {
+    fields: [comments.parentId],
+    references: [comments.id],
+    relationName: "replies",
+  }),
+  likes: many(commentLikes),
+  replies: many(comments, { relationName: "replies" }),
+}));
+
+export const commentLikesRelations = relations(commentLikes, ({ one }) => ({
+  comment: one(comments, {
+    fields: [commentLikes.commentId],
+    references: [comments.id],
+  }),
+
+  user: one(user, {
+    fields: [commentLikes.userId],
+    references: [user.id],
+  }),
+}));
+
+export const savedPostRelations = relations(savedPosts, ({ one }) => ({
+  user: one(user, {
+    fields: [savedPosts.userId],
+    references: [user.id],
+  }),
+  blog: one(blogs, {
+    fields: [savedPosts.blogId],
+    references: [blogs.id],
+  }),
+}));
+
+export const followsRelations = relations(follows, ({ one, many }) => ({
+  follower: one(user, {
+    fields: [follows.followerId],
+    references: [user.id],
+    relationName: "following",
+  }),
+  following: one(user, {
+    fields: [follows.followingId],
+    references: [user.id],
+    relationName: "followers",
+  }),
+}));
+export const sharesRelations = relations(shares, ({ one }) => ({
+  user: one(user, {
+    fields: [shares.userId],
+    references: [user.id],
+  }),
+  blog: one(blogs, {
+    fields: [shares.blogId],
+    references: [blogs.id],
+  }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  recipient: one(user, {
+    fields: [notifications.recipientId],
+    references: [user.id],
+    relationName: "recievedNotifications",
+  }),
+  actor: one(user, {
+    fields: [notifications.actorId],
+    references: [user.id],
+    relationName: "sentNotifications",
+  }),
+}));
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
+  }),
+}));
+
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, {
+    fields: [account.userId],
+    references: [user.id],
+  }),
+}));
