@@ -36,17 +36,17 @@ export type AuthUser = {
   id: string;
   name: string;
   email: string;
-  emailVerified: string;
+  emailVerified: boolean;
   image: string | null;
   role: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 };
 export type Variables = {
   user: AuthUser;
   session: {
     id: string;
     userId: string;
-    expiresAt: string;
+    expiresAt: Date;
   };
 };
