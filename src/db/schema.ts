@@ -139,9 +139,7 @@ export const blogs = sqliteTable(
     published: integer("published", { mode: "boolean" })
       .notNull()
       .default(false),
-    aiGenerated: integer("ai_generated", { mode: "boolean" })
-      .notNull()
-      .default(false),
+    aiGenerated: integer("ai_generated", { mode: "boolean" }).default(false),
     viewCount: integer("view_count").notNull().default(0),
     shareCount: integer("share_count").notNull().default(0),
     ...timestamps,
