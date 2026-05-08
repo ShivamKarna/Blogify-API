@@ -9,8 +9,8 @@ export type User = {
 };
 
 export type BindingsType = {
-  DB: D1Database;
-  KV: KVNamespace;
+  blogify_db: D1Database;
+  blogify_kv: KVNamespace;
 
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;

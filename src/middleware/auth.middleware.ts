@@ -6,7 +6,7 @@ export const requireAuth = createMiddleware<{
   Bindings: BindingsType;
   Variables: Variables;
 }>(async (c, next) => {
-  const auth = getBetterAuthInstance(c.env.DB, c.env);
+  const auth = getBetterAuthInstance(c.env.blogify_db, c.env);
 
   const session = await auth.api.getSession({
     headers: c.req.raw.headers,
@@ -26,7 +26,7 @@ export const optionalAuth = createMiddleware<{
   Bindings: BindingsType;
   Variables: Variables;
 }>(async (c, next) => {
-  const auth = getBetterAuthInstance(c.env.DB, c.env);
+  const auth = getBetterAuthInstance(c.env.blogify_db, c.env);
 
   try {
     const session = await auth.api.getSession({
