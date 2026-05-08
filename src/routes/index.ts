@@ -1,8 +1,9 @@
 import { Hono } from "hono";
-import { blogRouter } from "./blog.routes";
+import { publicBlogRouter, privateBlogRouter } from "./blog.routes";
 
 const mainRouter = new Hono();
 
-mainRouter.route("/blog", blogRouter);
+mainRouter.route("/blogs", publicBlogRouter);
+mainRouter.route("/blogs", privateBlogRouter);
 
 export { mainRouter };
