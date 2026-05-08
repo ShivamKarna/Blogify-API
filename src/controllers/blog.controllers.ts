@@ -1,9 +1,20 @@
+// Pagination WORK GOING ON IN SEARCH BLOGS
 // TODO: tags should have a seperate table i guess
-import { blogs } from "../../db/schema";
-import { factory } from "../../lib/factory";
-import { getDb } from "../../db";
+/* 
+  getBlogs  
+  getBlogBySlug
+  getMyBlogs
+  searchBlogs
+  createBlog
+  updateBlog
+  deleteBlog
+   
+*/
+import { blogs } from "../db/schema";
+import { getDb } from "../db";
 import { sql, and, desc, eq, like } from "drizzle-orm";
 import { z } from "zod";
+import { Context } from "hono";
 
 const createBlogSchema = z.object({
   title: z.string().min(2),
@@ -29,15 +40,35 @@ function slugify(title: string) {
   );
 }
 
+type QueryParams = Record<string, string | undefined>;
+export const getPagination = (query: QueryParams) => {
+  const rawPage = query.page;
+  const rawLimit = query.limit;
+
+  const page = Math.max(
+    1,
+    Number.isFinite(Number(rawPage)) ? Number(rawPage) : 1,
+  );
+
+  const limit = Math.min(
+    50,
+    Math.max(1, Number.isFinite(Number(rawLimit)) ? Number(rawLimit) : 10),
+  );
+
+  const offset = (page - 1) * limit;
+
+  return {
+    page,
+    limit,
+    offset,
+  };
+};
+
 class BlogController {
   // list published blogs
-  getBlogs = factory.createHandlers(async (c) => {
-    const db = getDb(c.env.DB);
-    const user = c.get("user");
-    const { limit = "20", page = "1" } = c.req.query();
-    const limitNum = Math.min(50, Number(limit));
-    const pageNum = Math.max(1, Number(page));
-    const offset = (pageNum - 1) * limitNum;
+  getBlogs = async (c: Context) => {
+    const db = getDb(c.env.blogify_db);
+    const { page, limit, offset } = getPagination(c.req.query());
 
     // const result = await db
     //   .select()
@@ -66,20 +97,36 @@ class BlogController {
           columns: { id: true, name: true, image: true },
         },
       },
-      limit: limitNum,
+      limit,
       orderBy: (blogs, { desc }) => [desc(blogs.createdAt)],
       offset,
     });
+    if (!result) {
+      return c.json({ success: false, error: "NOT_FOUND" }, 404);
+    }
 
-    return c.json({ blogs: result, page: pageNum, limit: limitNum }, 200);
-  });
+    return c.json(
+      {
+        success: true,
+        message: "Blogs fetched successfully",
+        data: result,
+        meta: {
+          page,
+          limit,
+          count: result.length,
+          hasMore: result.length === limit,
+        },
+      },
+      200,
+    );
+  };
 
-  getBlogBySlug = factory.createHandlers(async (c) => {
-    const db = getDb(c.env.DB);
+  getBlogBySlug = async (c: Context) => {
+    const db = getDb(c.env.blogify_db);
     const slug = c.req.param("slug");
 
     if (!slug) {
-      return c.json({ error: "Blog not found" }, 404);
+      return c.json({ success: false, error: "NOT_FOUND" }, 404);
     }
 
     const result = await db.query.blogs.findFirst({
@@ -96,7 +143,7 @@ class BlogController {
     });
 
     if (!result) {
-      return c.json({ error: "Blog not found" }, 404);
+      return c.json({ success: false, error: "NOT_FOUND" }, 404);
     }
 
     await db
@@ -104,12 +151,18 @@ class BlogController {
       .set({ viewCount: sql`${blogs.viewCount} + 1` })
       .where(eq(blogs.id, result.id));
 
-    return c.json({ data: result }, 200);
-  });
+    return c.json(
+      { success: true, message: "Blog fetched successfully", data: result },
+      200,
+    );
+  };
 
-  getMyBlogs = factory.createHandlers(async (c) => {
-    const db = getDb(c.env.DB);
+  getMyBlogs = async (c: Context) => {
+    const db = getDb(c.env.blogify_db);
     const user = c.get("user");
+    const { page, limit, offset } = getPagination(c.req.query());
+
+    const total = await db.$count(blogs, eq(blogs.authorId, user.id));
 
     const result = await db.query.blogs.findMany({
       where: eq(blogs.authorId, user.id),
@@ -126,17 +179,39 @@ class BlogController {
         createdAt: true,
       },
       orderBy: (blogs, { desc }) => [desc(blogs.createdAt)],
+      limit,
+      offset,
     });
 
-    return c.json({ blogs: result }, 200);
-  });
+    return c.json(
+      {
+        success: true,
+        message: "Blogs fetched successfully",
+        data: result,
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasMore: page * limit < total,
+        },
+      },
+      200,
+    );
+  };
 
-  searchBlogs = factory.createHandlers(async (c) => {
-    const db = getDb(c.env.DB);
+  searchBlogs = async (c: Context) => {
+    const db = getDb(c.env.blogify_db);
     const { q } = c.req.query();
+    const { page, limit, offset } = getPagination(c.req.query());
+
+    const total = await db.$count(
+      blogs,
+      and(like(blogs.title, `%${q}%`), eq(blogs.published, true)),
+    );
 
     if (!q) {
-      return c.json({ error: "Query required" }, 404);
+      return c.json({ success: false, error: "QUERY_REQUIRED" }, 404);
     }
 
     // const result = await db
@@ -167,14 +242,33 @@ class BlogController {
           },
         },
       },
-      limit: 20,
+      limit,
+      offset,
     });
+    if (!result) {
+      return c.json({ success: false, error: "NOT_FOUND" }, 404);
+    }
 
-    return c.json({ blogs: result }, 200);
-  });
+    return c.json(
+      {
+        success: true,
+        message: "Blogs fetched successfully",
+        data: result,
+        meta: {
+          query: q,
+          page,
+          limit,
+          offset,
+          totalPage: Math.ceil(total / limit),
+          hasMore: result.length === limit,
+        },
+      },
+      200,
+    );
+  };
 
-  createBlog = factory.createHandlers(async (c) => {
-    const db = getDb(c.env.DB);
+  createBlog = async (c: Context) => {
+    const db = getDb(c.env.blogify_db);
     const user = c.get("user");
 
     const userInput = await c.req.json();
@@ -182,7 +276,7 @@ class BlogController {
     const parsed = createBlogSchema.safeParse(userInput);
 
     if (!parsed.success) {
-      return c.json({ error: parsed.error.issues }, 400);
+      return c.json({ success: false, error: parsed.error.issues }, 400);
     }
 
     const slug = slugify(parsed.data.title);
@@ -198,18 +292,25 @@ class BlogController {
       .returning();
 
     if (result.length === 0) {
-      return c.json({ message: "Internal server error" }, 500);
+      return c.json({ success: false, error: "INTERNAL_SERVER_ERROR" }, 500);
     }
-    return c.json({ data: result, message: "Blog created Successfully" }, 201);
-  });
+    return c.json(
+      {
+        success: true,
+        message: "Blog created successfully",
+        data: result,
+      },
+      201,
+    );
+  };
 
-  updateBlog = factory.createHandlers(async (c) => {
-    const db = getDb(c.env.DB);
+  updateBlog = async (c: Context) => {
+    const db = getDb(c.env.blogify_db);
     const user = c.get("user");
     const id = c.req.param("id");
 
     if (!id) {
-      return c.json({ error: "Blog Not Found" }, 404);
+      return c.json({ success: false, error: "NOT_FOUND" }, 404);
     }
 
     const userInput = await c.req.json();
@@ -217,7 +318,7 @@ class BlogController {
     const parsed = updateBlogSchema.safeParse(userInput);
 
     if (!parsed.success) {
-      return c.json({ error: parsed.error.issues }, 400);
+      return c.json({ success: false, error: parsed.error.issues }, 400);
     }
 
     const existing = await db.query.blogs.findFirst({
@@ -226,10 +327,10 @@ class BlogController {
     });
 
     if (!existing) {
-      return c.json({ error: "Blog Not found" }, 404);
+      return c.json({ success: false, error: "NOT_FOUND" }, 404);
     }
     if (existing.authorId !== user.id) {
-      return c.json({ error: "Forbidden" }, 403);
+      return c.json({ success: false, error: "Forbidden" }, 403);
     }
 
     const { tags, ...rest } = parsed.data;
@@ -249,18 +350,27 @@ class BlogController {
       .where(eq(blogs.id, id))
       .returning();
 
+    if (!result) {
+      return c.json({ success: false, error: "INTERNAL_SERVER_ERROR" }, 500);
+    }
+
     return c.json(
-      { data: result[0], message: "Blog updated Successfully" },
+      {
+        success: true,
+        message: "Blog updated successfully",
+        data: result,
+      },
       200,
     );
-  });
-  deleteBlog = factory.createHandlers(async (c) => {
-    const db = getDb(c.env.DB);
+  };
+
+  deleteBlog = async (c: Context) => {
+    const db = getDb(c.env.blogify_db);
     const user = c.get("user");
     const id = c.req.param("id");
 
     if (!id) {
-      return c.json({ error: "Blog Not Found" }, 404);
+      return c.json({ success: false, error: "NOT_FOUND" }, 404);
     }
 
     const existing = await db.query.blogs.findFirst({
@@ -272,15 +382,18 @@ class BlogController {
     });
 
     if (!existing) {
-      return c.json({ error: "Not found" }, 404);
+      return c.json({ success: false, error: "NOT_FOUND" }, 404);
     }
     if (existing.authorId !== user.id) {
-      return c.json({ error: "Forbidden" }, 403);
+      return c.json({ success: false, error: "Forbidden" }, 403);
     }
 
     await db.delete(blogs).where(eq(blogs.id, id));
-    return c.json({ message: "Blog deleted successfully" }, 200);
-  });
+    return c.json(
+      { success: true, message: "Blog deleted successfully", data: null },
+      200,
+    );
+  };
 }
 
 export const blogController = new BlogController();
