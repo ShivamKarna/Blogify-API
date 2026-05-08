@@ -1,5 +1,3 @@
-// Pagination WORK GOING ON IN SEARCH BLOGS
-// TODO: tags should have a seperate table i guess
 /* 
   getBlogs  
   getBlogBySlug
@@ -13,10 +11,10 @@
 import { blogs } from "../db/schema";
 import { getDb } from "../db";
 import { sql, and, desc, eq, like } from "drizzle-orm";
-import { z } from "zod";
+import { success, z } from "zod";
 import { Context } from "hono";
 
-const createBlogSchema = z.object({
+export const createBlogSchema = z.object({
   title: z.string().min(2),
   subTitle: z.string().optional(),
   excerpt: z.string().optional(),
@@ -27,7 +25,7 @@ const createBlogSchema = z.object({
   aiGenerated: z.boolean(),
 });
 
-const updateBlogSchema = createBlogSchema.partial();
+export const updateBlogSchema = createBlogSchema.partial();
 
 function slugify(title: string) {
   return (
@@ -65,7 +63,6 @@ export const getPagination = (query: QueryParams) => {
 };
 
 class BlogController {
-  // list published blogs
   getBlogs = async (c: Context) => {
     const db = getDb(c.env.blogify_db);
     const { page, limit, offset } = getPagination(c.req.query());
@@ -161,6 +158,9 @@ class BlogController {
     const db = getDb(c.env.blogify_db);
     const user = c.get("user");
     const { page, limit, offset } = getPagination(c.req.query());
+    if (!user) {
+      return c.json({ success: false, error: "Unauthorized" }, 401);
+    }
 
     const total = await db.$count(blogs, eq(blogs.authorId, user.id));
 
