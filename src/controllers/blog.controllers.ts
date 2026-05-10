@@ -8,10 +8,10 @@
   deleteBlog
    
 */
-import { blogs } from "../db/schema";
+import { blogs, reactions } from "../db/schema";
 import { getDb } from "../db";
-import { sql, and, desc, eq, like } from "drizzle-orm";
-import { success, z } from "zod";
+import { sql, and, eq, like } from "drizzle-orm";
+import { z } from "zod";
 import { Context } from "hono";
 
 export const createBlogSchema = z.object({
@@ -258,9 +258,8 @@ class BlogController {
           query: q,
           page,
           limit,
-          offset,
-          totalPage: Math.ceil(total / limit),
-          hasMore: result.length === limit,
+          totalPages: Math.ceil(total / limit),
+          hasMore: page * limit < total,
         },
       },
       200,
@@ -391,6 +390,122 @@ class BlogController {
     await db.delete(blogs).where(eq(blogs.id, id));
     return c.json(
       { success: true, message: "Blog deleted successfully", data: null },
+      200,
+    );
+  };
+
+  addReactionToBlog = async (c: Context) => {
+    const db = getDb(c.env.blogify_db);
+    const user = c.get("user");
+    const blogId = c.req.param("id");
+
+    if (!blogId) {
+      return c.json({ success: false, error: "Blog not found" }, 404);
+    }
+
+    const userInput = await c.req.json();
+
+    const validTypes = ["LIKE", "LOVE", "FIRE"];
+    if (!validTypes.includes(userInput.type)) {
+      return c.json({ success: false, error: "Invalid reaction type" }, 400);
+    }
+
+    const existing = await db.query.blogs.findFirst({
+      where: eq(blogs.id, blogId),
+      columns: {
+        id: true,
+        published: true,
+      },
+    });
+
+    if (!existing || existing.published !== true) {
+      return c.json({ success: false, error: "Blog not found" }, 404);
+    }
+
+    // upsert
+    await db
+      .insert(reactions)
+      .values({ blogId, userId: user.id, type: userInput.type })
+      .onConflictDoUpdate({
+        target: [reactions.blogId, reactions.userId],
+        set: { type: userInput.type },
+      });
+
+    return c.json({ success: true, message: "Reaction added" }, 200);
+  };
+  deleteReactionFromBlog = async (c: Context) => {
+    const db = getDb(c.env.blogify_db);
+    const blogId = c.req.param("id");
+    if (!blogId) {
+      return c.json({ success: false, error: "Blog not found" }, 404);
+    }
+    const user = c.get("user");
+
+    const existing = await db.query.blogs.findFirst({
+      where: eq(blogs.id, blogId),
+      columns: {
+        id: true,
+        published: true,
+      },
+    });
+
+    if (!existing || existing.published !== true) {
+      return c.json({ success: false, error: "Blog not found" }, 404);
+    }
+
+    await db
+      .delete(reactions)
+      .where(and(eq(reactions.blogId, blogId), eq(reactions.userId, user.id)));
+
+    return c.json({
+      success: true,
+      message: "Reaction Deleted successfully",
+    });
+  };
+
+  getAllReactionsOfBlog = async (c: Context) => {
+    const db = getDb(c.env.blogify_db);
+    const blogId = c.req.param("id");
+    if (!blogId) {
+      return c.json({ success: false, error: "Blog not found" }, 404);
+    }
+
+    const existing = await db.query.blogs.findFirst({
+      where: eq(blogs.id, blogId),
+      columns: {
+        id: true,
+        published: true,
+      },
+    });
+
+    if (!existing || existing.published !== true) {
+      return c.json({ success: false, error: "Blog not found" }, 404);
+    }
+
+    const result = await db.query.reactions.findMany({
+      where: eq(reactions.blogId, blogId),
+      columns: {
+        userId: true,
+        type: true,
+      },
+    });
+
+    const count = result.reduce(
+      (acc, r) => {
+        acc[r.type] = (acc[r.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    return c.json(
+      {
+        success: true,
+        data: {
+          total: result.length,
+          count,
+        },
+      },
       200,
     );
   };
