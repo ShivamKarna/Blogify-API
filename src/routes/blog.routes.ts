@@ -321,6 +321,47 @@ privateBlogRouter.openapi(
   }),
   commentsController.unlikeComment,
 );
+
+privateBlogRouter.openapi(
+  createRoute({
+    method: "post",
+    path: "/:id/save",
+    tags: ["Blogs"],
+    summary: "Save a Blog Post",
+    responses: {
+      404: { description: "Blog Not Found" },
+      200: { description: "Blog Saved successfully" },
+    },
+  }),
+  blogController.saveBlog,
+);
+privateBlogRouter.openapi(
+  createRoute({
+    method: "delete",
+    path: "/:id/save",
+    tags: ["Blogs"],
+    summary: "Unsave a Blog Post",
+    responses: {
+      404: { description: "Blog Not Found / Post Not Saved" },
+      200: { description: "Blog UnSaved successfully" },
+    },
+  }),
+  blogController.unSaveBlog,
+);
+
+privateBlogRouter.openapi(
+  createRoute({
+    method: "get",
+    path: "/me/saved-blogs",
+    tags: ["Blogs"],
+    summary: "Get my Saved Blogs",
+    responses: {
+      404: { description: "Blog Not Found" },
+      200: { description: "Blog fetched successfully" },
+    },
+  }),
+  blogController.getAllSavedBlogs,
+);
 // moved slug to last so it doesn't conflict with other routes
 publicBlogRouter.openapi(
   createRoute({
@@ -329,7 +370,7 @@ publicBlogRouter.openapi(
     tags: ["Blogs"],
     summary: "Get blog by slug",
     responses: {
-      404: { description: "Not found" },
+      404: { description: "Blog Not Found" },
       200: { description: "Blog fetched successfully" },
     },
   }),
