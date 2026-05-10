@@ -12,7 +12,7 @@ import { z } from "zod";
 // like comment
 // unlike comment
 
-class CommentController {
+class CommentsController {
   getComments = async (c: Context) => {
     const db = getDb(c.env.blogify_db);
     const blogId = c.req.param("id");
@@ -339,7 +339,10 @@ class CommentController {
       .set({ deleted: true, content: "[deleted]" })
       .where(eq(comments.id, commentId));
 
-    return c.json({ success: true, message: "Comment Deleted Successfully" });
+    return c.json(
+      { success: true, message: "Comment Deleted Successfully" },
+      200,
+    );
   };
   likeComment = async (c: Context) => {
     const db = getDb(c.env.blogify_db);
@@ -408,4 +411,4 @@ class CommentController {
   };
 }
 
-export const commentController = new CommentController();
+export const commentsController = new CommentsController();

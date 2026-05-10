@@ -5,7 +5,7 @@ import type { BindingsType } from "../lib/types";
 const authRouter = new Hono<{ Bindings: BindingsType }>();
 
 authRouter.on(["GET", "POST"], "/**", async (c) => {
-  const authInstance = getBetterAuthInstance(c.env.DB, c.env);
+  const authInstance = getBetterAuthInstance(c.env.blogify_db, c.env);
   return authInstance.handler(c.req.raw);
 });
 
