@@ -6,6 +6,12 @@
   createBlog
   updateBlog
   deleteBlog
+  addReactionToBlog
+  deleteReactionFromBlog
+  getAllReactionsOfBlog
+  saveBlog
+  unsaveBlog
+  getAllSavedBlogs
    
 */
 import { blogs, reactions, savedPosts } from "../db/schema";

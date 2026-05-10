@@ -5,7 +5,22 @@ import { swaggerUI } from "@hono/swagger-ui";
 const app = new OpenAPIHono();
 
 app.get("/", (c) => {
-  return c.text("This is Blogify API, Server is Up and Working");
+  return c.json({
+    name: "Blogify API",
+    status: "healthy",
+    description: "AI-powered blogging platform API",
+    docs: "/docs",
+    health: "/health",
+    api: "/api",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get("/health", (c) => {
+  return c.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+  });
 });
 
 app.route("/api", mainRouter);
