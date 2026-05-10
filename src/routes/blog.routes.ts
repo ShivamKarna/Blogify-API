@@ -64,22 +64,9 @@ publicBlogRouter.openapi(
 publicBlogRouter.openapi(
   createRoute({
     method: "get",
-    path: "/:slug",
-    tags: ["Blogs"],
-    summary: "Get blog by slug",
-    responses: {
-      404: { description: "Not found" },
-      200: { description: "Blog fetched successfully" },
-    },
-  }),
-  blogController.getBlogBySlug,
-);
-publicBlogRouter.openapi(
-  createRoute({
-    method: "get",
     path: "/me",
     tags: ["Blogs"],
-    summary: "Get my blogs",
+    summary: "Get my blogs", // put /me in public routes but it is protected in controller, so it' fine
     request: {
       query: z.object({
         page: z.string().optional(),
@@ -157,4 +144,71 @@ privateBlogRouter.openapi(
   blogController.deleteBlog,
 );
 
+// blog + reactions route
+publicBlogRouter.openapi(
+  createRoute({
+    method: "get",
+    path: "/reactions/:id",
+    tags: ["Blogs"],
+    summary: "Get all reactions of a Blog",
+    responses: {
+      404: { description: "Not Found" },
+      200: { description: "Reaction Fetched Successfully" },
+    },
+  }),
+  blogController.getAllReactionsOfBlog,
+);
+privateBlogRouter.openapi(
+  createRoute({
+    method: "post",
+    path: "/reactions/:id",
+    tags: ["Blogs"],
+    summary: "Add Reaction to a Blog",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: z.object({
+              type: z.enum(["LIKE", "LOVE", "FIRE"]),
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      404: { description: "Blog not found" },
+      400: { description: "Invalid Reaction Type" },
+      200: { description: "Reaction Added" },
+    },
+  }),
+  blogController.addReactionToBlog,
+);
+
+privateBlogRouter.openapi(
+  createRoute({
+    method: "delete",
+    path: "/reactions/:id",
+    tags: ["Blogs"],
+    summary: "Delete Reaction from a Blog",
+    responses: {
+      404: { description: "Not Found" },
+      200: { description: "Reaction Deleted Successfully" },
+    },
+  }),
+  blogController.deleteReactionFromBlog,
+);
+// moved slug to last so it doesn't conflict with other routes
+publicBlogRouter.openapi(
+  createRoute({
+    method: "get",
+    path: "/:slug",
+    tags: ["Blogs"],
+    summary: "Get blog by slug",
+    responses: {
+      404: { description: "Not found" },
+      200: { description: "Blog fetched successfully" },
+    },
+  }),
+  blogController.getBlogBySlug,
+);
 export { publicBlogRouter, privateBlogRouter };
