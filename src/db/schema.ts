@@ -130,7 +130,6 @@ export const blogs = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
-    subTitle: text("sub_title"),
     excerpt: text("excerpt"),
     slug: text("slug").notNull().unique(),
     tags: text("tags"),
