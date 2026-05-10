@@ -8,7 +8,7 @@
   deleteBlog
    
 */
-import { blogs, reactions } from "../db/schema";
+import { blogs, reactions, savedPosts } from "../db/schema";
 import { getDb } from "../db";
 import { sql, and, eq, like } from "drizzle-orm";
 import { z } from "zod";
@@ -393,7 +393,7 @@ class BlogController {
       200,
     );
   };
-
+  // implementing reaction actions
   addReactionToBlog = async (c: Context) => {
     const db = getDb(c.env.blogify_db);
     const user = c.get("user");
@@ -508,6 +508,123 @@ class BlogController {
       },
       200,
     );
+  };
+  // implementing savePosts actions
+  saveBlog = async (c: Context) => {
+    const db = getDb(c.env.blogify_db);
+    const blogId = c.req.param("id");
+    const user = c.get("user");
+    if (!blogId) {
+      return c.json({ success: false, error: "Blog not found" }, 404);
+    }
+
+    const existing = await db.query.blogs.findFirst({
+      where: and(eq(blogs.id, blogId), eq(blogs.published, true)),
+      columns: {
+        id: true,
+      },
+    });
+
+    if (!existing) {
+      return c.json({ success: false, error: "Blog not found" }, 404);
+    }
+
+    // now save it
+    const result = await db
+      .insert(savedPosts)
+      .values({
+        userId: user.id,
+        blogId,
+      })
+      .returning();
+
+    return c.json(
+      { success: true, message: "Blog Saved Successfully", data: result[0] },
+      200,
+    );
+  };
+  unSaveBlog = async (c: Context) => {
+    const db = getDb(c.env.blogify_db);
+    const blogId = c.req.param("id");
+    const user = c.get("user");
+    if (!blogId) {
+      return c.json({ success: false, error: "Blog not found" }, 404);
+    }
+
+    const alreadySaved = await db.query.savedPosts.findFirst({
+      where: and(eq(savedPosts.blogId, blogId), eq(savedPosts.userId, user.id)),
+    });
+
+    if (!alreadySaved) {
+      return c.json({ success: false, error: "Post not saved" }, 400);
+    }
+
+    // now unsave it
+    await db
+      .delete(savedPosts)
+      .where(
+        and(eq(savedPosts.blogId, blogId), eq(savedPosts.userId, user.id)),
+      );
+
+    return c.json({ success: true, message: "Blog UnSaved Successfully" }, 200);
+  };
+
+  getAllSavedBlogs = async (c: Context) => {
+    const db = getDb(c.env.blogify_db);
+    const user = c.get("user");
+
+    const { page, limit, offset } = getPagination(c.req.query());
+
+    const total = await db.$count(savedPosts, eq(savedPosts.userId, user.id));
+
+    const result = await db.query.savedPosts.findMany({
+      where: eq(savedPosts.userId, user.id),
+      columns: { createdAt: true },
+      with: {
+        blog: {
+          where: eq(blogs.published, true),
+          columns: {
+            id: true,
+            title: true,
+            excerpt: true,
+            slug: true,
+            tags: true,
+            coverImage: true,
+            createdAt: true,
+          },
+          with: {
+            author: {
+              columns: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: (savedPosts, { desc }) => [desc(savedPosts.createdAt)],
+      limit,
+      offset,
+    });
+
+    return c.json({
+      success: true,
+      message: "Saved Blogs fetched Successfully",
+      data: result.map((item) => ({
+        savedAt: item.createdAt,
+        blog: {
+          ...item.blog,
+        },
+      })),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: page * limit < total,
+      },
+    });
   };
 }
 
