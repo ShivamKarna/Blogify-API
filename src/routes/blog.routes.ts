@@ -8,6 +8,7 @@ import {
 import { requireAuth, optionalAuth } from "../middleware/auth.middleware";
 import { BindingsType } from "../lib/types";
 import { Variables } from "../lib/types";
+import { commentsController } from "../controllers/comment.controllers";
 
 const publicBlogRouter = new OpenAPIHono<{
   Bindings: BindingsType;
@@ -197,6 +198,129 @@ privateBlogRouter.openapi(
   }),
   blogController.deleteReactionFromBlog,
 );
+
+publicBlogRouter.openapi(
+  createRoute({
+    method: "get",
+    path: "/:id/comments",
+    tags: ["Comments"],
+    summary: "Get comments of a Blog ",
+    responses: {
+      404: { description: "Blog not found" },
+      200: { description: "Comments fetched successfully" },
+    },
+  }),
+  commentsController.getComments,
+);
+
+publicBlogRouter.openapi(
+  createRoute({
+    method: "get",
+    path: "/comments/:id/replies",
+    tags: ["Comments"],
+    summary: "Get Replies of a comment",
+    responses: {
+      404: { description: "Blog not found" },
+      200: { description: "Comments fetched successfully" },
+    },
+  }),
+  commentsController.getReplies,
+);
+privateBlogRouter.openapi(
+  createRoute({
+    method: "post",
+    path: "/:id/comments",
+    tags: ["Comments"],
+    summary: "Add comment to a Blog",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: z.object({
+              content: z.string().min(2),
+              parentId: z.string().optional(),
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      404: { description: "Blog not found / Parent Comment not found" },
+      400: { description: "Invalid Input" },
+      500: { description: "Internal Server Error" },
+      201: { description: "Comment addedd Successfully" },
+    },
+  }),
+  commentsController.addComment,
+);
+privateBlogRouter.openapi(
+  createRoute({
+    method: "patch",
+    path: "/comments/:id",
+    tags: ["Comments"],
+    summary: "Update comment of a Blog",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: z.object({
+              content: z.string().min(2),
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      404: { description: "Blog not found / Parent Comment not found" },
+      400: { description: "Invalid Input" },
+      200: { description: "Comment updated Successfully" },
+    },
+  }),
+  commentsController.updateComment,
+);
+
+privateBlogRouter.openapi(
+  createRoute({
+    method: "delete",
+    path: "/comments/:id",
+    tags: ["Comments"],
+    summary: "Delete Comment of a blog",
+    responses: {
+      404: { description: "Comment not found" },
+      403: { description: "Forbidden" },
+      200: { description: "Comment delete Successfully" },
+    },
+  }),
+  commentsController.deleteComment,
+);
+
+privateBlogRouter.openapi(
+  createRoute({
+    method: "post",
+    path: "/comments/:id/like",
+    tags: ["Comments"],
+    summary: "Like a comment",
+    responses: {
+      404: { description: "Comment not found" },
+      200: { description: "Comment Liked" },
+    },
+  }),
+  commentsController.likeComment,
+);
+
+privateBlogRouter.openapi(
+  createRoute({
+    method: "delete",
+    path: "/comments/:id/like",
+    tags: ["Comments"],
+    summary: "Unlike a comment",
+    responses: {
+      404: { description: "Comment not found" },
+      200: { description: "Comment UnLiked" },
+    },
+  }),
+  commentsController.unlikeComment,
+);
 // moved slug to last so it doesn't conflict with other routes
 publicBlogRouter.openapi(
   createRoute({
@@ -211,4 +335,5 @@ publicBlogRouter.openapi(
   }),
   blogController.getBlogBySlug,
 );
+
 export { publicBlogRouter, privateBlogRouter };
