@@ -167,7 +167,7 @@ export const reactions = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
 
-    type: text("type").notNull(),
+    type: text("type", { enum: ["LIKE", "LOVE", "FIRE"] }).notNull(),
   },
   (table) => [
     unique("reactions_blog_user_uniq").on(table.blogId, table.userId), // Prevents user from liking the same  blogpost more than once
