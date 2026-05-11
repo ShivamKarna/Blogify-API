@@ -362,6 +362,32 @@ privateBlogRouter.openapi(
   }),
   blogController.getAllSavedBlogs,
 );
+
+publicBlogRouter.openapi(
+  createRoute({
+    method: "get",
+    path: "/:id/share",
+    tags: ["Blogs"],
+    summary: "Get blog by slug",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: z.object({
+              platform: z.string(),
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      404: { description: "Blog not found" },
+      400: { description: "Invalid Input" },
+      200: { description: "Blog shared successfully" },
+    },
+  }),
+  blogController.shareBlog,
+);
 // moved slug to last so it doesn't conflict with other routes
 publicBlogRouter.openapi(
   createRoute({
