@@ -14,10 +14,10 @@
   getAllSavedBlogs
    
 */
-import { blogs, reactions, savedPosts } from "../db/schema";
+import { blogs, reactions, savedPosts, shares, user } from "../db/schema";
 import { getDb } from "../db";
 import { sql, and, eq, like } from "drizzle-orm";
-import { z } from "zod";
+import { success, z } from "zod";
 import { Context } from "hono";
 
 export const createBlogSchema = z.object({
@@ -631,6 +631,44 @@ class BlogController {
         hasMore: page * limit < total,
       },
     });
+  };
+
+  // implementing shares tracking
+  shareBlog = async (c: Context) => {
+    const db = getDb(c.env.blogify_db);
+    const blogId = c.req.param("id");
+    if (!blogId) {
+      return c.json({ success: false, error: "Blog not found" }, 404);
+    }
+    const user = c.get("user");
+
+    const userInput = await c.req.json();
+
+    const schema = z.object({
+      platform: z.string(),
+    });
+
+    const parsed = schema.safeParse(userInput);
+
+    if (!parsed.success) {
+      return c.json({ success: false, error: parsed.error.issues }, 400);
+    }
+
+    const result = await db
+      .insert(shares)
+      .values({
+        blogId,
+        userId: user?.id ?? null,
+        platform: parsed.data.platform,
+      })
+      .returning();
+
+    await db
+      .update(blogs)
+      .set({ shareCount: sql`${blogs.shareCount} + 1` })
+      .where(eq(blogs.id, blogId));
+
+    return c.json({ success: true, message: "Blog Shared Successfully" }, 200);
   };
 }
 
