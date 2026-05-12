@@ -19,8 +19,8 @@ const privateBlogRouter = new OpenAPIHono<{
   Variables: Variables;
 }>();
 
-privateBlogRouter.use("*", requireAuth);
-publicBlogRouter.use("*", optionalAuth);
+privateBlogRouter.use("/*", requireAuth);
+publicBlogRouter.use("/*", optionalAuth);
 
 publicBlogRouter.openapi(
   createRoute({
