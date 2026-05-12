@@ -1,0 +1,1 @@
+ALTER TABLE `user` ADD `is_public` integer DEFAULT true NOT NULL;
