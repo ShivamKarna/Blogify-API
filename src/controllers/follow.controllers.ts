@@ -1,5 +1,5 @@
 import { Context } from "hono";
-import { follows, blogs, user } from "../db/schema";
+import { follows, user } from "../db/schema";
 import { getDb } from "../db";
 import { eq, and } from "drizzle-orm";
 import { getPagination } from "./blog.controllers";
@@ -89,14 +89,6 @@ class FollowsController {
     if (!targetUserId) {
       return c.json({ success: false, error: "User not found" }, 404);
     }
-    const userExists = await db.query.user.findFirst({
-      where: eq(user.id, targetUserId),
-      columns: { id: true },
-    });
-    if (!userExists) {
-      return c.json({ success: false, error: "User not found" }, 404);
-    }
-
     const targetUser = await db.query.user.findFirst({
       where: eq(user.id, targetUserId),
       columns: {
@@ -104,6 +96,10 @@ class FollowsController {
         isPublic: true,
       },
     });
+
+    if (!targetUser) {
+      return c.json({ success: false, error: "User not found" }, 404);
+    }
 
     // like insta, dosar k follower/following list can only be visible when you follow them
     if (!targetUser?.isPublic && requestingUser.id !== targetUserId) {
@@ -163,16 +159,36 @@ class FollowsController {
   getFollowing = async (c: Context) => {
     const db = getDb(c.env.blogify_db);
     const targetUserId = c.req.param("id");
-
     if (!targetUserId) {
       return c.json({ success: false, error: "User not found" }, 404);
     }
-    const userExists = await db.query.user.findFirst({
+
+    const requestingUser = c.get("user");
+
+    const targetUser = await db.query.user.findFirst({
       where: eq(user.id, targetUserId),
-      columns: { id: true },
+      columns: {
+        id: true,
+        isPublic: true,
+      },
     });
-    if (!userExists) {
+    if (!targetUser) {
       return c.json({ success: false, error: "User not found" }, 404);
+    }
+    if (!targetUser?.isPublic && requestingUser.id !== targetUserId) {
+      const isFollowing = await db.query.follows.findFirst({
+        where: and(
+          eq(follows.followerId, requestingUser.id),
+          eq(follows.followingId, targetUserId),
+        ),
+        columns: { id: true },
+      });
+      if (!isFollowing) {
+        return c.json(
+          { success: false, error: "This account is Private" },
+          403,
+        );
+      }
     }
 
     const { page, limit, offset } = getPagination(c.req.query());
