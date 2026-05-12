@@ -39,6 +39,7 @@ export const user = sqliteTable("user", {
     .default(false)
     .notNull(),
   image: text("image"),
+  isPublic: integer("is_public", { mode: "boolean" }).notNull().default(true), // added for public and private profile settign like instagram
   role: text("role").default("user").notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

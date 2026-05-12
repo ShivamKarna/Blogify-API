@@ -61,6 +61,11 @@ const getBetterAuthInstance = (
           defaultValue: "user",
           input: false,
         },
+        isPublic: {
+          type: "boolean",
+          defaultValue: true,
+          input: true, // added for public and private profile settign like instagram
+        },
       },
     },
   });
