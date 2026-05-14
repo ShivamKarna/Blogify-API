@@ -7,12 +7,13 @@ type NotifType =
   | "comment_reply"
   | "comment_like"
   | "follow"
-  | "mention";
+  | "mention"
+  | "new_blog";
 
 type ParamsType = {
   recipientId: string;
   actorId: string;
-  type: string;
+  type: NotifType;
   entityId: string;
   entityType: string;
 };
