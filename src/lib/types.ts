@@ -1,3 +1,5 @@
+import type { D1Database, KVNamespace, Queue } from "@cloudflare/workers-types";
+
 export type User = {
   id: string;
   name: string;
@@ -30,6 +32,7 @@ export type BindingsType = {
   CLOUDINARY_UPLOAD_PRESET: string;
 
   ENVIRONMENT: string;
+  blogify_notifications: Queue;
 };
 
 export type AuthUser = {
