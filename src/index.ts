@@ -1,6 +1,10 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { mainRouter } from "./routes";
 import { swaggerUI } from "@hono/swagger-ui";
+import type { MessageBatch } from "@cloudflare/workers-types";
+import type { BindingsType } from "./lib/types";
+import { createNotification } from "./lib/notification.helper";
+import type { NotificationPayload } from "./lib/notificationQueue";
 
 const app = new OpenAPIHono();
 
@@ -45,4 +49,31 @@ app.doc("/docs/json", {
 });
 app.get("/docs", swaggerUI({ url: "/docs/json" }));
 
-export default app;
+const worker = {
+  fetch: app.fetch,
+  queue: async (
+    batch: MessageBatch<NotificationPayload>,
+    env: BindingsType,
+  ) => {
+    const tasks = batch.messages.map(async (message) => {
+      const payload = message.body;
+      try {
+        await createNotification(env.blogify_db, {
+          recipientId: payload.recepientId,
+          actorId: payload.actorId,
+          type: payload.type,
+          entityId: payload.entityId,
+          entityType: payload.entityType,
+        });
+        message.ack();
+      } catch (error) {
+        console.log("Failed to proces notification : ", error);
+        message.retry();
+      }
+    });
+
+    await Promise.all(tasks);
+  },
+};
+
+export default worker;
