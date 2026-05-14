@@ -15,6 +15,7 @@
         "queue": "blogify-notifications",
         "max_batch_size": 10,
         "max_batch_timeout": 5,
+        "max_retries": 3,
       },
     ],
   },
