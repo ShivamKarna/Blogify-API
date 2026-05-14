@@ -4,12 +4,13 @@ import { getDb } from "../db";
 import { and, eq, sql, isNull } from "drizzle-orm";
 import { getPagination } from "./blog.controllers";
 import { z } from "zod";
+import { sendNotification } from "../lib/notificationQueue";
 
 // getCommentsOf a Blog Post
-// addComment to a Blog post
+// addComment to a Blog post = has notification / queue service
 // updateComment of a BLog post
 // delete comment from a blog post
-// like comment
+// like comment = has notification / queue service
 // unlike comment
 
 class CommentsController {
@@ -173,6 +174,7 @@ class CommentsController {
       columns: {
         id: true,
         published: true,
+        authorId: true,
       },
     });
 
@@ -194,10 +196,19 @@ class CommentsController {
 
     let rootId: string | null = null;
 
+    let parentComment:
+      | {
+          id: string;
+          rootId: string | null;
+          authorId: string;
+        }
+      | null
+      | undefined = null;
+
     if (parsed.data.parentId) {
-      const parentComment = await db.query.comments.findFirst({
+      parentComment = await db.query.comments.findFirst({
         where: eq(comments.id, parsed.data.parentId),
-        columns: { id: true, rootId: true },
+        columns: { id: true, rootId: true, authorId: true },
       });
 
       if (!parentComment) {
@@ -230,6 +241,28 @@ class CommentsController {
 
     if (result.length === 0) {
       return c.json({ success: false, error: "Internal server Error" }, 500);
+    }
+
+    await sendNotification(c.env.blogify_notifications, {
+      recepientId: existing.authorId,
+      actorId: user.id,
+      type: "comment",
+      entityId: result[0].id,
+      entityType: "comment",
+    });
+
+    if (!parentComment) {
+      return c.json({ success: false, error: "Parent Comment not found" }, 404);
+    }
+
+    if (parsed.data.parentId) {
+      await sendNotification(c.env.blogify_notifications, {
+        recepientId: parentComment.authorId,
+        actorId: user.id,
+        type: "comment_reply",
+        entityId: result[0].id,
+        entityType: "comment",
+      });
     }
 
     return c.json(
@@ -370,6 +403,14 @@ class CommentsController {
       .update(comments)
       .set({ likeCount: sql`${comments.likeCount} + 1` })
       .where(eq(comments.id, commentId));
+
+    await sendNotification(c.env.blogify_notifications, {
+      recepientId: existing.authorId,
+      actorId: user.id,
+      type: "comment_like",
+      entityId: commentId,
+      entityType: "comment",
+    });
 
     return c.json({ success: true, message: "Comment liked" }, 200);
   };
