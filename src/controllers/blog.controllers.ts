@@ -3,10 +3,10 @@
   getBlogBySlug
   getMyBlogs
   searchBlogs
-  createBlog
-  updateBlog
+  createBlog = has notification / queue service
+  updateBlog = has notification / queue service
   deleteBlog
-  addReactionToBlog
+  addReactionToBlog = has notification / queue service
   deleteReactionFromBlog
   getAllReactionsOfBlog
   saveBlog
@@ -14,11 +14,23 @@
   getAllSavedBlogs
    
 */
-import { blogs, reactions, savedPosts, shares, user } from "../db/schema";
+import {
+  blogs,
+  follows,
+  reactions,
+  savedPosts,
+  shares,
+  user,
+} from "../db/schema";
 import { getDb } from "../db";
 import { sql, and, eq, like } from "drizzle-orm";
-import { success, z } from "zod";
+import { promise, success, z } from "zod";
 import { Context } from "hono";
+import {
+  NotificationPayload,
+  sendNotification,
+  sendNotificationBatch,
+} from "../lib/notificationQueue";
 
 export const createBlogSchema = z.object({
   title: z.string().min(2),
@@ -299,6 +311,33 @@ class BlogController {
     if (result.length === 0) {
       return c.json({ success: false, error: "INTERNAL_SERVER_ERROR" }, 500);
     }
+
+    if (parsed.data.published === true) {
+      const userFollowers = await db
+        .select({ followerId: follows.followerId })
+        .from(follows)
+        .where(eq(follows.followingId, user.id));
+
+      const BATCH_SIZE = 100;
+      const batches: Promise<void>[] = [];
+
+      for (let i = 0; i < userFollowers.length; i += BATCH_SIZE) {
+        const chunk = userFollowers.slice(i, i + BATCH_SIZE);
+
+        const payloads: NotificationPayload[] = chunk.map((item) => ({
+          recepientId: item.followerId,
+          actorId: user.id,
+          type: "new_blog",
+          entityId: result[0].id,
+          entityType: "blog",
+        }));
+        batches.push(
+          sendNotificationBatch(c.env.blogify_notifications, payloads, user.id),
+        );
+      }
+      await Promise.all(batches);
+    }
+
     return c.json(
       {
         success: true,
@@ -328,7 +367,7 @@ class BlogController {
 
     const existing = await db.query.blogs.findFirst({
       where: eq(blogs.id, id),
-      columns: { id: true, authorId: true },
+      columns: { id: true, authorId: true, published: true },
     });
 
     if (!existing) {
@@ -357,6 +396,37 @@ class BlogController {
 
     if (!result) {
       return c.json({ success: false, error: "INTERNAL_SERVER_ERROR" }, 500);
+    }
+
+    const wasAlreadyPublished = existing.published === true;
+    const isNowPublished = result[0].published === true;
+
+    if (!wasAlreadyPublished && isNowPublished) {
+      const userFollowers = await db
+        .select({ followerId: follows.followerId })
+        .from(follows)
+        .where(eq(follows.followingId, user.id));
+
+      const BATCH_SIZE = 100;
+      const batches: Promise<void>[] = [];
+
+      for (let i = 0; i < userFollowers.length; i += BATCH_SIZE) {
+        const chunk = userFollowers.slice(i, i + BATCH_SIZE);
+
+        const payloads: NotificationPayload[] = chunk.map((item) => ({
+          recepientId: item.followerId,
+          actorId: user.id,
+          type: "new_blog",
+          entityId: result[0].id,
+          entityType: "blog",
+        }));
+
+        batches.push(
+          sendNotificationBatch(c.env.blogify_notifications, payloads, user.id),
+        );
+      }
+
+      await Promise.all(batches);
     }
 
     return c.json(
@@ -420,6 +490,7 @@ class BlogController {
       where: eq(blogs.id, blogId),
       columns: {
         id: true,
+        authorId: true,
         published: true,
       },
     });
@@ -436,6 +507,14 @@ class BlogController {
         target: [reactions.blogId, reactions.userId],
         set: { type: userInput.type },
       });
+
+    await sendNotification(c.env.blogify_notifications, {
+      recepientId: existing.authorId,
+      actorId: user.id,
+      type: "reaction",
+      entityId: blogId,
+      entityType: "blog",
+    });
 
     return c.json({ success: true, message: "Reaction added" }, 200);
   };
