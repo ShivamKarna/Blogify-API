@@ -3,7 +3,12 @@ import { follows, user } from "../db/schema";
 import { getDb } from "../db";
 import { eq, and } from "drizzle-orm";
 import { getPagination } from "./blog.controllers";
+import { sendNotification } from "../lib/notificationQueue";
 
+// followUser = has notification / queue service
+// unFollowUser
+// getFollowers
+// getFOllowing
 class FollowsController {
   followUser = async (c: Context) => {
     const db = getDb(c.env.blogify_db);
@@ -37,6 +42,14 @@ class FollowsController {
         followingId,
       })
       .onConflictDoNothing();
+
+    await sendNotification(c.env.blogify_notifications, {
+      recepientId: followingId,
+      actorId: follower.id,
+      type: "follow",
+      entityId: follower.id,
+      entityType: "follow",
+    });
 
     return c.json(
       { success: true, message: "User followed successfully" },
