@@ -1,4 +1,4 @@
-type NotificationPayload = {
+export type NotificationPayload = {
   recepientId: string;
   actorId: string;
   type:
@@ -14,10 +14,18 @@ type NotificationPayload = {
 };
 
 async function sendNotification(queue: Queue, payload: NotificationPayload) {
-  if (payload.recepientId === payload.actorId) {
-    return;
-  }
+  if (payload.recepientId === payload.actorId) return;
   await queue.send(payload);
 }
+async function sendNotificationBatch(
+  queue: Queue,
+  payloads: NotificationPayload[],
+  actorId: string,
+) {
+  const filtered = payloads.filter((p) => p.recepientId !== p.actorId);
+  if (filtered.length === 0) return;
 
-export { sendNotification };
+  await queue.sendBatch(filtered.map((payload) => ({ body: payload })));
+}
+
+export { sendNotification, sendNotificationBatch };
