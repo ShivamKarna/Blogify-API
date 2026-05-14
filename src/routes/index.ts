@@ -1,8 +1,8 @@
-import { Hono } from "hono";
+import { OpenAPIHono } from "@hono/zod-openapi";
 import { publicBlogRouter, privateBlogRouter } from "./blog.routes";
 import { userRouter } from "./user.routes";
 
-const mainRouter = new Hono();
+const mainRouter = new OpenAPIHono();
 
 mainRouter.route("/blogs", publicBlogRouter);
 mainRouter.route("/blogs", privateBlogRouter);
