@@ -5,6 +5,7 @@ import type { MessageBatch } from "@cloudflare/workers-types";
 import type { BindingsType } from "./lib/types";
 import { createNotification } from "./lib/notification.helper";
 import type { NotificationPayload } from "./lib/notificationQueue";
+import { rateLimiter } from "./middleware/rateLimiter.middleware";
 
 const app = new OpenAPIHono();
 
@@ -26,6 +27,8 @@ app.get("/health", (c) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+app.use("/api/*", rateLimiter);
 
 app.route("/api", mainRouter);
 

@@ -13,6 +13,7 @@ export type User = {
 export type BindingsType = {
   blogify_db: D1Database;
   blogify_kv: KVNamespace;
+  blogify_notifications: Queue;
 
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
@@ -32,7 +33,6 @@ export type BindingsType = {
   CLOUDINARY_UPLOAD_PRESET: string;
 
   ENVIRONMENT: string;
-  blogify_notifications: Queue;
 };
 
 export type AuthUser = {
