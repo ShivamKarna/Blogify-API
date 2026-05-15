@@ -1,5 +1,5 @@
 import { Context } from "hono";
-import { blogs, commentLikes, comments } from "../db/schema";
+import { blogs, commentLikes, comments, user } from "../db/schema";
 import { getDb } from "../db";
 import { and, eq, sql, isNull } from "drizzle-orm";
 import { getPagination } from "../lib/helpful.functions";
@@ -164,7 +164,7 @@ class CommentsController {
   addComment = async (c: Context) => {
     const db = getDb(c.env.blogify_db);
     const blogId = c.req.param("id");
-    const user = c.get("user");
+    const authUser = c.get("user");
 
     if (!blogId) {
       return c.json({ success: false, error: "Blog not found" }, 404);
@@ -172,11 +172,7 @@ class CommentsController {
 
     const existing = await db.query.blogs.findFirst({
       where: eq(blogs.id, blogId),
-      columns: {
-        id: true,
-        published: true,
-        authorId: true,
-      },
+      columns: { id: true, published: true, authorId: true },
     });
 
     if (!existing || existing.published !== true) {
@@ -190,34 +186,31 @@ class CommentsController {
     });
 
     const parsed = schema.safeParse(userInput);
-
     if (!parsed.success) {
       return c.json({ success: false, error: parsed.error.issues }, 400);
     }
 
     let rootId: string | null = null;
-
-    let parentComment:
-      | {
-          id: string;
-          rootId: string | null;
-          authorId: string;
-        }
-      | null
-      | undefined = null;
+    let parentComment: {
+      id: string;
+      rootId: string | null;
+      authorId: string;
+    } | null = null;
 
     if (parsed.data.parentId) {
-      parentComment = await db.query.comments.findFirst({
-        where: eq(comments.id, parsed.data.parentId),
-        columns: { id: true, rootId: true, authorId: true },
-      });
+      parentComment =
+        (await db.query.comments.findFirst({
+          where: eq(comments.id, parsed.data.parentId),
+          columns: { id: true, rootId: true, authorId: true },
+        })) ?? null;
 
       if (!parentComment) {
         return c.json(
-          { success: false, error: "Parent Comment not found" },
+          { success: false, error: "Parent comment not found" },
           404,
         );
       }
+
       rootId = parentComment.rootId ?? parentComment.id;
     }
 
@@ -225,14 +218,20 @@ class CommentsController {
       .insert(comments)
       .values({
         blogId,
-        authorId: user.id,
+        authorId: authUser.id,
         content: parsed.data.content,
         parentId: parsed.data.parentId ?? null,
         rootId,
       })
       .returning();
 
-    // update replyCount
+    if (result.length === 0) {
+      return c.json({ success: false, error: "Internal server error" }, 500);
+    }
+
+    const commentId = result[0].id;
+
+    // update replyCount on parent
     if (parsed.data.parentId) {
       await db
         .update(comments)
@@ -240,34 +239,51 @@ class CommentsController {
         .where(eq(comments.id, parsed.data.parentId));
     }
 
-    if (result.length === 0) {
-      return c.json({ success: false, error: "Internal server Error" }, 500);
-    }
-
+    // notify blog author of new comment
     await sendNotification(c.env.blogify_notifications, {
       recipientId: existing.authorId,
-      actorId: user.id,
+      actorId: authUser.id,
       type: "comment",
-      entityId: result[0].id,
+      entityId: commentId,
       entityType: "comment",
     });
 
-    if (!parentComment) {
-      return c.json({ success: false, error: "Parent Comment not found" }, 404);
-    }
-
-    if (parsed.data.parentId) {
+    // notify parent comment author of reply
+    if (parentComment) {
       await sendNotification(c.env.blogify_notifications, {
         recipientId: parentComment.authorId,
-        actorId: user.id,
+        actorId: authUser.id,
         type: "comment_reply",
-        entityId: result[0].id,
+        entityId: commentId,
         entityType: "comment",
       });
     }
 
+    // handle mentions
+    const mentionRegex = /@(\w+)/g;
+    const mentionedUsernames = [
+      ...parsed.data.content.matchAll(mentionRegex),
+    ].map((match) => match[1]);
+
+    for (const username of mentionedUsernames) {
+      const mentionedUser = await db.query.user.findFirst({
+        where: eq(user.name, username),
+        columns: { id: true },
+      });
+
+      if (mentionedUser && mentionedUser.id !== authUser.id) {
+        await sendNotification(c.env.blogify_notifications, {
+          recipientId: mentionedUser.id,
+          actorId: authUser.id,
+          type: "mention",
+          entityId: commentId,
+          entityType: "comment",
+        });
+      }
+    }
+
     return c.json(
-      { success: true, message: "Comment added Successfully", data: result[0] },
+      { success: true, message: "Comment added successfully", data: result[0] },
       201,
     );
   };
