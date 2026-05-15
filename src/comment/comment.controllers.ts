@@ -4,7 +4,7 @@ import { getDb } from "../db";
 import { and, eq, sql, isNull } from "drizzle-orm";
 import { getPagination } from "../lib/helpful.functions";
 import { z } from "zod";
-import { sendNotification } from "../lib/notificationQueue";
+import { sendNotification } from "../notification/notificationQueue";
 
 // getCommentsOf a Blog Post
 // addComment to a Blog post = has notification / queue service
@@ -245,7 +245,7 @@ class CommentsController {
     }
 
     await sendNotification(c.env.blogify_notifications, {
-      recepientId: existing.authorId,
+      recipientId: existing.authorId,
       actorId: user.id,
       type: "comment",
       entityId: result[0].id,
@@ -258,7 +258,7 @@ class CommentsController {
 
     if (parsed.data.parentId) {
       await sendNotification(c.env.blogify_notifications, {
-        recepientId: parentComment.authorId,
+        recipientId: parentComment.authorId,
         actorId: user.id,
         type: "comment_reply",
         entityId: result[0].id,
@@ -406,7 +406,7 @@ class CommentsController {
       .where(eq(comments.id, commentId));
 
     await sendNotification(c.env.blogify_notifications, {
-      recepientId: existing.authorId,
+      recipientId: existing.authorId,
       actorId: user.id,
       type: "comment_like",
       entityId: commentId,

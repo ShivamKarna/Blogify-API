@@ -2,8 +2,8 @@ import { Context } from "hono";
 import { follows, user } from "../db/schema";
 import { getDb } from "../db";
 import { eq, and } from "drizzle-orm";
-import { getPagination } from "./blog.controllers";
-import { sendNotification } from "../lib/notificationQueue";
+import { getPagination } from "../lib/helpful.functions";
+import { sendNotification } from "../notification/notificationQueue";
 
 // followUser = has notification / queue service
 // unFollowUser
@@ -44,7 +44,7 @@ class FollowsController {
       .onConflictDoNothing();
 
     await sendNotification(c.env.blogify_notifications, {
-      recepientId: followingId,
+      recipientId: followingId,
       actorId: follower.id,
       type: "follow",
       entityId: follower.id,

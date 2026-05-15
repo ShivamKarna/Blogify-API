@@ -3,8 +3,9 @@
 import { z, createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { BindingsType, Variables } from "../lib/types";
 import { requireAuth } from "../middleware/auth.middleware";
-import { followsController } from "../controllers/follow.controllers";
-import { paginationSchema } from "./route.schemas";
+import { followsController } from "../follow/follow.controllers";
+import { paginationSchema } from "../lib/query.schema";
+import { userController } from "./user.controllers";
 
 const userRouter = new OpenAPIHono<{
   Bindings: BindingsType;
@@ -13,6 +14,19 @@ const userRouter = new OpenAPIHono<{
 
 userRouter.use("/*", requireAuth);
 
+userRouter.openapi(
+  createRoute({
+    method: "get",
+    path: "/:id",
+    tags: ["User"],
+    summary: "Get user profile",
+    responses: {
+      404: { description: "User not found" },
+      200: { description: "User profile fetched successfully" },
+    },
+  }),
+  userController.getUserProfile,
+);
 userRouter.openapi(
   createRoute({
     method: "post",

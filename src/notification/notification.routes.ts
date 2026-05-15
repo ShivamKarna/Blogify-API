@@ -1,8 +1,8 @@
-import { notificationController } from "../controllers/notification.controllers";
+import { notificationController } from "./notification.controllers";
 import { createRoute, z, OpenAPIHono } from "@hono/zod-openapi";
 import { BindingsType, Variables } from "../lib/types";
 import { requireAuth } from "../middleware/auth.middleware";
-import { paginationWithUnreadSchema } from "./route.schemas";
+import { paginationWithUnreadSchema } from "../lib/query.schema";
 
 const notfiRouter = new OpenAPIHono<{
   Bindings: BindingsType;

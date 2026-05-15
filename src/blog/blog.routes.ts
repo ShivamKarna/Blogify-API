@@ -4,12 +4,15 @@ import {
   blogController,
   createBlogSchema,
   updateBlogSchema,
-} from "../controllers/blog.controllers";
+} from "../blog/blog.controllers";
 import { requireAuth, optionalAuth } from "../middleware/auth.middleware";
 import { BindingsType } from "../lib/types";
 import { Variables } from "../lib/types";
-import { commentsController } from "../controllers/comment.controllers";
-import { paginationSchema, searchSchemaWithPagination } from "./route.schemas";
+import { commentsController } from "../comment/comment.controllers";
+import {
+  paginationSchema,
+  searchSchemaWithPagination,
+} from "../lib/query.schema";
 
 const publicBlogRouter = new OpenAPIHono<{
   Bindings: BindingsType;

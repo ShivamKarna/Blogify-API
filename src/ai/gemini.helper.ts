@@ -3,7 +3,7 @@ const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 // callGemini, generatePost, generateTitles, generateExcerpts, suggestTags, improveText
 class GeminiFunctions {
-  callGemini = async (
+  private callGemini = async (
     apiKey: string,
     prompt: string,
     systemInstruction?: string,

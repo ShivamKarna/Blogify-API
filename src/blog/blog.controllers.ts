@@ -23,7 +23,7 @@ import {
   NotificationPayload,
   sendNotification,
   sendNotificationBatch,
-} from "../lib/notificationQueue";
+} from "../notification/notificationQueue";
 import { getPagination } from "../lib/helpful.functions";
 
 export const createBlogSchema = z.object({
@@ -298,7 +298,7 @@ class BlogController {
         const chunk = userFollowers.slice(i, i + BATCH_SIZE);
 
         const payloads: NotificationPayload[] = chunk.map((item) => ({
-          recepientId: item.followerId,
+          recipientId: item.followerId,
           actorId: user.id,
           type: "new_blog",
           entityId: result[0].id,
@@ -387,7 +387,7 @@ class BlogController {
         const chunk = userFollowers.slice(i, i + BATCH_SIZE);
 
         const payloads: NotificationPayload[] = chunk.map((item) => ({
-          recepientId: item.followerId,
+          recipientId: item.followerId,
           actorId: user.id,
           type: "new_blog",
           entityId: result[0].id,
@@ -482,7 +482,7 @@ class BlogController {
       });
 
     await sendNotification(c.env.blogify_notifications, {
-      recepientId: existing.authorId,
+      recipientId: existing.authorId,
       actorId: user.id,
       type: "reaction",
       entityId: blogId,
