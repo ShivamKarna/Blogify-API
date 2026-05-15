@@ -14,23 +14,17 @@
   getAllSavedBlogs
    
 */
-import {
-  blogs,
-  follows,
-  reactions,
-  savedPosts,
-  shares,
-  user,
-} from "../db/schema";
+import { blogs, follows, reactions, savedPosts, shares } from "../db/schema";
 import { getDb } from "../db";
 import { sql, and, eq, like } from "drizzle-orm";
-import { promise, success, z } from "zod";
+import { z } from "zod";
 import { Context } from "hono";
 import {
   NotificationPayload,
   sendNotification,
   sendNotificationBatch,
 } from "../lib/notificationQueue";
+import { getPagination } from "../lib/helpful.functions";
 
 export const createBlogSchema = z.object({
   title: z.string().min(2),
@@ -56,30 +50,6 @@ function slugify(title: string) {
   );
 }
 
-type QueryParams = Record<string, string | undefined>;
-export const getPagination = (query: QueryParams) => {
-  const rawPage = query.page;
-  const rawLimit = query.limit;
-
-  const page = Math.max(
-    1,
-    Number.isFinite(Number(rawPage)) ? Number(rawPage) : 1,
-  );
-
-  const limit = Math.min(
-    50,
-    Math.max(1, Number.isFinite(Number(rawLimit)) ? Number(rawLimit) : 10),
-  );
-
-  const offset = (page - 1) * limit;
-
-  return {
-    page,
-    limit,
-    offset,
-  };
-};
-
 class BlogController {
   getBlogs = async (c: Context) => {
     const db = getDb(c.env.blogify_db);
@@ -92,6 +62,8 @@ class BlogController {
     //   .orderBy(desc(blogs.createdAt))
     //   .limit(limitNum)
     //   .offset(offset);
+
+    const total = await db.$count(blogs, eq(blogs.published, true));
 
     const result = await db.query.blogs.findMany({
       where: eq(blogs.published, true),
@@ -128,8 +100,9 @@ class BlogController {
         meta: {
           page,
           limit,
-          count: result.length,
-          hasMore: result.length === limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasMore: page * limit < total,
         },
       },
       200,

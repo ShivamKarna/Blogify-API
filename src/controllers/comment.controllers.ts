@@ -2,7 +2,7 @@ import { Context } from "hono";
 import { blogs, commentLikes, comments } from "../db/schema";
 import { getDb } from "../db";
 import { and, eq, sql, isNull } from "drizzle-orm";
-import { getPagination } from "./blog.controllers";
+import { getPagination } from "../lib/helpful.functions";
 import { z } from "zod";
 import { sendNotification } from "../lib/notificationQueue";
 
@@ -152,6 +152,7 @@ class CommentsController {
         meta: {
           page,
           limit,
+          total,
           totalPages: Math.ceil(total / limit),
           hasMore: page * limit < total,
         },

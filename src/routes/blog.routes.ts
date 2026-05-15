@@ -9,6 +9,7 @@ import { requireAuth, optionalAuth } from "../middleware/auth.middleware";
 import { BindingsType } from "../lib/types";
 import { Variables } from "../lib/types";
 import { commentsController } from "../controllers/comment.controllers";
+import { paginationSchema, searchSchemaWithPagination } from "./route.schemas";
 
 const publicBlogRouter = new OpenAPIHono<{
   Bindings: BindingsType;
@@ -29,10 +30,7 @@ publicBlogRouter.openapi(
     tags: ["Blogs"],
     summary: "Get all blogs",
     request: {
-      query: z.object({
-        page: z.string().optional(),
-        limit: z.string().optional(),
-      }),
+      query: paginationSchema,
     },
     responses: {
       200: { description: "Blogs fetched successfully" },
@@ -48,11 +46,7 @@ publicBlogRouter.openapi(
     tags: ["Blogs"],
     summary: "Search blogs by title",
     request: {
-      query: z.object({
-        q: z.string(),
-        page: z.string().optional(),
-        limit: z.string().optional(),
-      }),
+      query: searchSchemaWithPagination,
     },
     responses: {
       400: { description: "Query required" },
@@ -69,10 +63,7 @@ publicBlogRouter.openapi(
     tags: ["Blogs"],
     summary: "Get my blogs", // put /me in public routes but it is protected in controller, so it' fine
     request: {
-      query: z.object({
-        page: z.string().optional(),
-        limit: z.string().optional(),
-      }),
+      query: paginationSchema,
     },
     responses: {
       200: { description: "Blogs fetched successfully" },
@@ -205,6 +196,9 @@ publicBlogRouter.openapi(
     path: "/:id/comments",
     tags: ["Comments"],
     summary: "Get comments of a Blog ",
+    request: {
+      query: paginationSchema,
+    },
     responses: {
       404: { description: "Blog not found" },
       200: { description: "Comments fetched successfully" },
@@ -219,6 +213,9 @@ publicBlogRouter.openapi(
     path: "/comments/:id/replies",
     tags: ["Comments"],
     summary: "Get Replies of a comment",
+    request: {
+      query: paginationSchema,
+    },
     responses: {
       404: { description: "Blog not found" },
       200: { description: "Comments fetched successfully" },
@@ -355,6 +352,9 @@ privateBlogRouter.openapi(
     path: "/me/saved-blogs",
     tags: ["Blogs"],
     summary: "Get my Saved Blogs",
+    request: {
+      query: paginationSchema,
+    },
     responses: {
       404: { description: "Blog Not Found" },
       200: { description: "Blog fetched successfully" },
@@ -365,7 +365,7 @@ privateBlogRouter.openapi(
 
 publicBlogRouter.openapi(
   createRoute({
-    method: "get",
+    method: "post",
     path: "/:id/share",
     tags: ["Blogs"],
     summary: "Get blog by slug",

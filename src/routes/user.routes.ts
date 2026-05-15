@@ -1,9 +1,10 @@
 // api link : /api/users/
 
-import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
+import { z, createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { BindingsType, Variables } from "../lib/types";
 import { requireAuth } from "../middleware/auth.middleware";
 import { followsController } from "../controllers/follow.controllers";
+import { paginationSchema } from "./route.schemas";
 
 const userRouter = new OpenAPIHono<{
   Bindings: BindingsType;
@@ -48,6 +49,9 @@ userRouter.openapi(
     path: "/:id/followers",
     tags: ["User"],
     summary: "Get followers list of a User",
+    request: {
+      query: paginationSchema,
+    },
     responses: {
       404: { description: "User not found" },
       403: { description: "Private Account" },
@@ -63,6 +67,11 @@ userRouter.openapi(
     path: "/:id/following",
     tags: ["User"],
     summary: "Get following list of a User",
+
+    request: {
+      query: paginationSchema,
+    },
+
     responses: {
       404: { description: "User not found" },
       403: { description: "Private Account" },
