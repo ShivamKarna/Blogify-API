@@ -12,10 +12,10 @@ Backend for Blogify, an AI-powered blogging platform running on Cloudflare Worke
 
 ## Live API + Docs
 
-Production endpoint and Swagger docs for the API.
+Production endpoint and API docs for the API.
 
 - Root API: https://blogify-api.shivamkarn.workers.dev
-- Swagger UI: https://blogify-api.shivamkarn.workers.dev/docs
+- API Docs (OpenAPI Swagger + Scalar): https://blogify-api.shivamkarn.workers.dev/reference
 
 ## Stack
 
@@ -32,7 +32,7 @@ Production endpoint and Swagger docs for the API.
 - Supports comments, threaded replies, and reactions
 - Allows following users with follower-based notifications
 - Queues notifications for background processing
-- Exposes OpenAPI docs for the full REST API
+- Exposes OpenAPI Swagger + Scalar docs for the full REST API
 
 ## Architecture
 
@@ -46,6 +46,6 @@ Request
 
 ## Docs
 
-All API endpoints are fully documented at the Swagger docs page:
+All API endpoints are fully documented at the OpenAPI Swagger + Scalar docs page:
 
-- https://blogify-api.shivamkarn.workers.dev/docs
+- https://blogify-api.shivamkarn.workers.dev/reference
