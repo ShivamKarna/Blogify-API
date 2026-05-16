@@ -1,0 +1,749 @@
+{
+  "info": {
+    "name": "Blogify API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "protocol", "value": "https" },
+    { "key": "baseUrl", "value": "blogify-api.shivamkarn.workers.dev" },
+    { "key": "authToken", "value": "" },
+    { "key": "blogId", "value": "" },
+    { "key": "commentId", "value": "" },
+    { "key": "parentCommentId", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "notificationId", "value": "" },
+    { "key": "slug", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Meta",
+      "item": [
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            }
+          }
+        },
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/health",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "OpenAPI JSON",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/docs/json",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["docs", "json"]
+            }
+          }
+        },
+        {
+          "name": "API Reference UI",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/reference",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["reference"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Blog - Public",
+      "item": [
+        {
+          "name": "Get Blogs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog?page=1&limit=10",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Blogs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/search?q=edge&page=1&limit=10",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "search"],
+              "query": [
+                { "key": "q", "value": "edge" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Blog By Slug",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/{{slug}}",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "{{slug}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Blog Reactions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/reactions/{{blogId}}",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "reactions", "{{blogId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Comments",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/{{blogId}}/comments?page=1&limit=10",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "{{blogId}}", "comments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Comment Replies",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/comments/{{commentId}}/replies?page=1&limit=10",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "comments", "{{commentId}}", "replies"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Share Blog",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"platform\": \"twitter\"\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/{{blogId}}/share",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "{{blogId}}", "share"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Blog - Protected",
+      "item": [
+        {
+          "name": "Get My Blogs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/me?page=1&limit=10",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "me"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Blog",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"How to build with Hono\",\n  \"subTitle\": \"Edge-ready APIs\",\n  \"excerpt\": \"A quick look at Hono on Cloudflare Workers.\",\n  \"tags\": [\"hono\", \"cloudflare\", \"edge\"],\n  \"content\": \"## Intro\\nThis is a sample blog post body.\",\n  \"coverImage\": \"https://example.com/cover.jpg\",\n  \"published\": true,\n  \"aiGenerated\": false\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog"]
+            }
+          }
+        },
+        {
+          "name": "Update Blog",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated title\",\n  \"content\": \"Updated blog content.\",\n  \"published\": true\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/{{blogId}}",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "{{blogId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Blog",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/{{blogId}}",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "{{blogId}}"]
+            }
+          }
+        },
+        {
+          "name": "Add Reaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"LIKE\"\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/reactions/{{blogId}}",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "reactions", "{{blogId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Reaction",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/reactions/{{blogId}}",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "reactions", "{{blogId}}"]
+            }
+          }
+        },
+        {
+          "name": "Add Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Great post!\"\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/{{blogId}}/comments",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "{{blogId}}", "comments"]
+            }
+          }
+        },
+        {
+          "name": "Add Reply to Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Thanks for the insight!\",\n  \"parentId\": \"{{parentCommentId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/{{blogId}}/comments",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "{{blogId}}", "comments"]
+            }
+          }
+        },
+        {
+          "name": "Update Comment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated comment content.\"\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/comments/{{commentId}}",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "comments", "{{commentId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/comments/{{commentId}}",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "comments", "{{commentId}}"]
+            }
+          }
+        },
+        {
+          "name": "Like Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/comments/{{commentId}}/like",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "comments", "{{commentId}}", "like"]
+            }
+          }
+        },
+        {
+          "name": "Unlike Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/comments/{{commentId}}/like",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "comments", "{{commentId}}", "like"]
+            }
+          }
+        },
+        {
+          "name": "Save Blog",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/{{blogId}}/save",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "{{blogId}}", "save"]
+            }
+          }
+        },
+        {
+          "name": "Unsave Blog",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/{{blogId}}/save",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "{{blogId}}", "save"]
+            }
+          }
+        },
+        {
+          "name": "Get Saved Blogs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/blog/me/saved-blogs?page=1&limit=10",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "blog", "me", "saved-blogs"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users - Protected",
+      "item": [
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/users/{{userId}}",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Follow User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/users/{{userId}}/follow",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}", "follow"]
+            }
+          }
+        },
+        {
+          "name": "Unfollow User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/users/{{userId}}/follow",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}", "follow"]
+            }
+          }
+        },
+        {
+          "name": "Get Followers",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/users/{{userId}}/followers?page=1&limit=10",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}", "followers"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Following",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/users/{{userId}}/following?page=1&limit=10",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}", "following"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications - Protected",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/notifications?page=1&limit=10&unread=true",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "unread", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/notifications/{{notificationId}}/read",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications", "{{notificationId}}", "read"]
+            }
+          }
+        },
+        {
+          "name": "Mark All Notifications as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/notifications/read-all",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications", "read-all"]
+            }
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/notifications/{{notificationId}}",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications", "{{notificationId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI - Protected",
+      "item": [
+        {
+          "name": "Generate Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"Serverless blogging platform\",\n  \"tone\": \"technical\",\n  \"length\": \"medium\"\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/ai/generate-post",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "generate-post"]
+            }
+          }
+        },
+        {
+          "name": "Generate Titles",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"Edge computing for bloggers\"\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/ai/generate-titles",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "generate-titles"]
+            }
+          }
+        },
+        {
+          "name": "Generate Excerpt",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"This is a longer body of text that needs an excerpt.\"\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/ai/generate-excerpt",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "generate-excerpt"]
+            }
+          }
+        },
+        {
+          "name": "Suggest Tags",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Building with Hono\",\n  \"content\": \"Hono is a fast web framework for the edge.\"\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/ai/suggest-tags",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "suggest-tags"]
+            }
+          }
+        },
+        {
+          "name": "Improve Text",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"This text are not good.\",\n  \"instruction\": \"Improve clarity and grammar\"\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/ai/improve",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "improve"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Upload - Protected",
+      "item": [
+        {
+          "name": "Upload File",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/upload",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "upload"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth (Better Auth)",
+      "description": "Better Auth provides its own route set under /api/auth/**. Add specific requests here based on your Better Auth client setup.",
+      "item": []
+    }
+  ]
+}
