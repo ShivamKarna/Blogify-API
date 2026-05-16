@@ -46,11 +46,10 @@ app.get("/health", (c) =>
   c.json({ status: "ok", timestamp: new Date().toISOString() }),
 );
 
-app.on(["GET", "POST"], "/api/auth/**", async (c) => {
+app.all("/api/auth/*", async (c) => {
   const auth = getBetterAuthInstance(c.env.blogify_db, c.env);
   return auth.handler(c.req.raw);
 });
-
 app.route("/api/blog", publicBlogRouter);
 app.route("/api/blog", privateBlogRouter);
 app.route("/api/users", userRouter);

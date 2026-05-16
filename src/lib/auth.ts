@@ -33,6 +33,7 @@ const getBetterAuthInstance = (
 
     secret: bindings.BETTER_AUTH_SECRET,
     baseURL: bindings.BETTER_AUTH_URL,
+    basePath: "/api/auth",
 
     trustedOrigins: [
       "http://localhost:8787",
