@@ -1,5 +1,5 @@
+import { Scalar } from "@scalar/hono-api-reference";
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { swaggerUI } from "@hono/swagger-ui";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import type { MessageBatch } from "@cloudflare/workers-types";
@@ -13,6 +13,7 @@ import { userRouter } from "./user/user.routes";
 import { notfiRouter } from "./notification/notification.routes";
 import { geminiRouter } from "./ai/gemini.routes";
 import { cloudinaryRouter } from "./cloudinary/cloudinary.routes";
+import { apiReference } from "@scalar/hono-api-reference";
 
 const app = new OpenAPIHono<{ Bindings: BindingsType; Variables: Variables }>();
 
@@ -74,7 +75,22 @@ app.doc("/docs/json", {
   ],
 });
 
-app.get("/docs", swaggerUI({ url: "/docs/json" }));
+// app.get("/docs", swaggerUI({ url: "/docs/json" }));
+app.get(
+  "/reference",
+  Scalar({
+    url: "/docs/json",
+    theme: "mars",
+    // alternate
+    // default
+    // moon
+    // purple
+    // solarized
+    // kepler
+    // mars
+    // saturn
+  }),
+);
 
 app.onError((err, c) => {
   console.error(`[ERROR] ${err.message}`);
