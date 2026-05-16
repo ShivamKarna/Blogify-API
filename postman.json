@@ -742,8 +742,45 @@
     },
     {
       "name": "Auth (Better Auth)",
-      "description": "Better Auth provides its own route set under /api/auth/**. Add specific requests here based on your Better Auth client setup.",
-      "item": []
+      "description": "Better Auth provides its own route set under /api/auth/**. OAuth routes are redirect-based and work best in a browser (or with Postman follow redirects enabled).",
+      "item": [
+        {
+          "name": "Sign in with Google",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/auth/signin/google",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "signin", "google"]
+            }
+          }
+        },
+        {
+          "name": "Sign in with GitHub",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/auth/signin/github",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "signin", "github"]
+            }
+          }
+        },
+        {
+          "name": "Sign in with Discord",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{protocol}}://{{baseUrl}}/api/auth/signin/discord",
+              "protocol": "{{protocol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "signin", "discord"]
+            }
+          }
+        }
+      ]
     }
   ]
 }
