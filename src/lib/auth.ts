@@ -2,9 +2,9 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "../db/schema";
-import type { BindingsType } from "./types";
+import { BindingsType } from "./types";
 
-const getBetterAuthInstance = (
+const buildAuth = (
   db: D1Database,
   bindings: Pick<
     BindingsType,
@@ -16,26 +16,21 @@ const getBetterAuthInstance = (
     | "DISCORD_CLIENT_SECRET"
     | "BETTER_AUTH_SECRET"
     | "BETTER_AUTH_URL"
-    | "blogify_kv"
   >,
 ) => {
   const drizzleDb = drizzle(db, { schema });
-
   return betterAuth({
     database: drizzleAdapter(drizzleDb, {
       provider: "sqlite",
       schema: {
         user: schema.user,
-        verification: schema.verification,
         session: schema.session,
         account: schema.account,
+        verification: schema.verification,
       },
     }),
-
     secret: bindings.BETTER_AUTH_SECRET,
     baseURL: bindings.BETTER_AUTH_URL,
-    basePath: "/api/auth",
-
     trustedOrigins: [
       "http://localhost:8787",
       "http://localhost:5173",
@@ -55,7 +50,6 @@ const getBetterAuthInstance = (
         clientSecret: bindings.DISCORD_CLIENT_SECRET,
       },
     },
-
     user: {
       additionalFields: {
         role: {
@@ -66,39 +60,34 @@ const getBetterAuthInstance = (
         isPublic: {
           type: "boolean",
           defaultValue: true,
-          input: true, // added for public and private profile settign like instagram
+          input: true,
         },
       },
     },
-    advanced: {
-      useSecureCookies: true,
-      crossSubDomainCookies: {
-        enabled: false,
-      },
-    },
-
-    // using cookie strategy instead of DB for state storage
-    oauth: {
-      storeStateStrategy: "cookie",
-    },
-
-    secondaryStorage: {
-      get: async (key) => {
-        return bindings.blogify_kv.get(key);
-      },
-      set: async (key, value, ttl) => {
-        if (ttl && ttl < 60) ttl = 60; // KV minimum TTL is 60 seconds
-        if (ttl) {
-          await bindings.blogify_kv.put(key, value, { expirationTtl: ttl });
-        } else {
-          await bindings.blogify_kv.put(key, value);
-        }
-      },
-      delete: async (key) => {
-        await bindings.blogify_kv.delete(key);
-      },
-    },
   });
+};
+
+let cachedAuth: ReturnType<typeof buildAuth> | undefined;
+
+const getBetterAuthInstance = (
+  db: D1Database,
+  bindings: Pick<
+    BindingsType,
+    | "GOOGLE_CLIENT_ID"
+    | "GOOGLE_CLIENT_SECRET"
+    | "GITHUB_CLIENT_ID"
+    | "GITHUB_CLIENT_SECRET"
+    | "DISCORD_CLIENT_ID"
+    | "DISCORD_CLIENT_SECRET"
+    | "BETTER_AUTH_SECRET"
+    | "BETTER_AUTH_URL"
+  >,
+) => {
+  if (cachedAuth) {
+    return cachedAuth;
+  }
+  cachedAuth = buildAuth(db, bindings);
+  return cachedAuth;
 };
 
 export { getBetterAuthInstance };
