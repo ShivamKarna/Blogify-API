@@ -22,6 +22,7 @@ const buildAuth = (
   return betterAuth({
     database: drizzleAdapter(drizzleDb, {
       provider: "sqlite",
+      debugLogs: true,
       schema: {
         user: schema.user,
         session: schema.session,
