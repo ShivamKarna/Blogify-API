@@ -16,6 +16,7 @@ const getBetterAuthInstance = (
     | "DISCORD_CLIENT_SECRET"
     | "BETTER_AUTH_SECRET"
     | "BETTER_AUTH_URL"
+    | "blogify_kv"
   >,
 ) => {
   const drizzleDb = drizzle(db, { schema });
@@ -67,6 +68,22 @@ const getBetterAuthInstance = (
           defaultValue: true,
           input: true, // added for public and private profile settign like instagram
         },
+      },
+    },
+    secondaryStorage: {
+      get: async (key) => {
+        const value = await bindings.blogify_kv.get(key);
+        return value;
+      },
+      set: async (key, value, ttl) => {
+        if (ttl) {
+          await bindings.blogify_kv.put(key, value, { expirationTtl: ttl });
+        } else {
+          await bindings.blogify_kv.put(key, value);
+        }
+      },
+      delete: async (key) => {
+        await bindings.blogify_kv.delete(key);
       },
     },
   });
