@@ -44,6 +44,14 @@ const buildAuth = (
       ipAddress: {
         ipAddressHeaders: ["cf-connecting-ip"],
       },
+      cookies: {
+        state: {
+          attributes: {
+            sameSite: "none",
+            secure: true,
+          },
+        },
+      },
     },
     socialProviders: {
       google: {
