@@ -36,6 +36,15 @@ const buildAuth = (
       "http://localhost:5173",
       "https://blogify-api.shivamkarn.workers.dev",
     ],
+    account: {
+      storeStateStrategy: "cookie",
+    },
+    advanced: {
+      useSecureCookies: true,
+      ipAddress: {
+        ipAddressHeaders: ["cf-connecting-ip"],
+      },
+    },
     socialProviders: {
       google: {
         clientId: bindings.GOOGLE_CLIENT_ID,
