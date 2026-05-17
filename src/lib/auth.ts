@@ -70,12 +70,24 @@ const getBetterAuthInstance = (
         },
       },
     },
+    advanced: {
+      useSecureCookies: true,
+      crossSubDomainCookies: {
+        enabled: false,
+      },
+    },
+
+    // using cookie strategy instead of DB for state storage
+    oauth: {
+      storeStateStrategy: "cookie",
+    },
+
     secondaryStorage: {
       get: async (key) => {
-        const value = await bindings.blogify_kv.get(key);
-        return value;
+        return bindings.blogify_kv.get(key);
       },
       set: async (key, value, ttl) => {
+        if (ttl && ttl < 60) ttl = 60; // KV minimum TTL is 60 seconds
         if (ttl) {
           await bindings.blogify_kv.put(key, value, { expirationTtl: ttl });
         } else {
